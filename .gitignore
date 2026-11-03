@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Sanal ortam
+.venv/
+venv/
+env/
+
+# Kullanıcı verisi (veritabanı, görseller, çıktılar, ayarlar, loglar)
+data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.log
+
+# PyInstaller çıktıları
+build/
+dist/
+
+# İşletim sistemi / editör
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/
+
+# Proje dışı referans/tasarım notları (yayınlanmaz)
+Promt*.txt
+*.html
+
+# Kullanıcının kişisel/alt içerikleri (ayrı repo vb.)
+Çözülemeyen sorular/
