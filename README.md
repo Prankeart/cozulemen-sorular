@@ -10,6 +10,23 @@ sayfaya **cevap anahtarı** ekler.
 
 ---
 
+## 📥 İndir ve Kur (Windows)
+
+En güncel **tek dosya exe** için: **Releases** → `TestPDFUretici.exe` dosyasını indir.
+
+1. `TestPDFUretici.exe` dosyasını indir (Python kurulu olmasına gerek **yok**).
+2. İstediğin bir klasöre koy (örn. Masaüstü veya `Program Files`).
+3. Çift tıkla → çalışır. İlk açılışta exe'in yanındaki `data/` klasöründe
+   veritabanı, görseller, çıktılar ve ayarlar tutulur.
+
+> **Not (Windows SmartScreen):** İmzasız exe'lerde ilk çalıştırmada "Windows korudu"
+> uyarısı çıkabilir → **Daha fazla bilgi → Yine de çalıştır**. Bu normaldir; ileride
+> kod imzalama (code signing) ile kaldırılabilir.
+
+Kaynak koddan çalıştırmak istersen aşağıdaki **Kurulum** bölümüne bak.
+
+---
+
 ## ✨ Özellikler
 
 - **Global kısayolla yakalama** (varsayılan `Ctrl+Shift+S`) — değiştirilebilir.
