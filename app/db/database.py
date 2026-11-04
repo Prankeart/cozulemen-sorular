@@ -31,6 +31,7 @@ VARSAYILAN_STIL: dict[str, Any] = {
     "sayfa_tarzi": "tek",       # "tek" | "iki"
     "ayrac": "cizgi",           # "cizgi" | "yok"
     "soru_alti_cizgi": "yok",   # "cizgi" | "yok" (her soru altına çizgi)
+    "genis_tam_genislik": "kapali",  # "acik" | "kapali" (geniş soru iki sütunu kaplasın)
     "soru_boslugu": 24,         # piksel benzeri birim; kaydırıcı
     "renk": "#2f6f4f",          # vurgu rengi (hex)
     "font": "Helvetica",        # yazı tipi adı

@@ -193,43 +193,61 @@ def export_pdf(
             x = col_x[1] - GUTTER / 2
             c.line(x, content_bottom, x, content_top)
 
-    # satırları kur: (öğeler, tam_genişlik_mi)
-    #  - normal sorular 2'şerli satırlar (yan yana iki sütun)
-    #  - çok geniş soru tek başına tam genişlik satırı (akış bozulmadan)
-    rows: list[tuple[list[SoruGorsel], bool]] = []
-    buf: list[SoruGorsel] = []
+    genis_acik = stil.get("genis_tam_genislik", "kapali") == "acik"
 
-    def flush_buf():
-        i = 0
-        while i < len(buf):
-            rows.append((buf[i:i + 2], False))
-            i += 2
+    if ncol > 1 and genis_acik:
+        # --- satır tabanlı: çok geniş soru iki sütunu kaplayan bant olur ---
+        # normal sorular 2'şerli satırlar (yan yana), geniş soru tam genişlik
+        rows: list[tuple[list[SoruGorsel], bool]] = []
+        buf: list[SoruGorsel] = []
 
-    for g in gorseller:
-        ratio = g.genislik / max(1, g.yukseklik)
-        genis = ncol > 1 and ratio >= WIDE_RATIO
-        if genis or ncol == 1:
-            flush_buf(); buf.clear()
-            rows.append(([g], True))
-        else:
-            buf.append(g)
-    flush_buf()
+        def flush_buf():
+            i = 0
+            while i < len(buf):
+                rows.append((buf[i:i + 2], False))
+                i += 2
 
-    # yerleşim: satırlar dikey olarak akar; sığmayan satır yeni sayfaya geçer
-    y = content_top
-    ayraclari_ciz()
-    for items, full in rows:
-        avail = full_w if full else col_w
-        xs = [MARGIN] if full else col_x
-        olc = [_olcek(g, avail, max_h, soru_alti) for g in items]
-        row_h = max(h for _, _, h in olc)
-        if y - row_h < content_bottom:
-            c.showPage()
-            y = content_top
-            ayraclari_ciz()
-        for g, (iw, ih, ih_item), x in zip(items, olc, xs):
-            _draw_item(c, g, x, y, iw, ih, ih_item, font, renk, soru_alti)
-        y -= row_h + gap
+        for g in gorseller:
+            ratio = g.genislik / max(1, g.yukseklik)
+            if ratio >= WIDE_RATIO:
+                flush_buf(); buf.clear()
+                rows.append(([g], True))
+            else:
+                buf.append(g)
+        flush_buf()
+
+        y = content_top
+        ayraclari_ciz()
+        for items, full in rows:
+            avail = full_w if full else col_w
+            xs = [MARGIN] if full else col_x
+            olc = [_olcek(g, avail, max_h, soru_alti) for g in items]
+            row_h = max(h for _, _, h in olc)
+            if y - row_h < content_bottom:
+                c.showPage()
+                y = content_top
+                ayraclari_ciz()
+            for g, (iw, ih, ih_item), x in zip(items, olc, xs):
+                _draw_item(c, g, x, y, iw, ih, ih_item, font, renk, soru_alti)
+            y -= row_h + gap
+    else:
+        # --- sütun-öncelikli: sorular alt alta (sol sütunu doldur, sonra sağ) ---
+        col = 0
+        y = content_top
+        ayraclari_ciz()
+        for g in gorseller:
+            iw, ih, item_h = _olcek(g, col_w, max_h, soru_alti)
+            if y - item_h < content_bottom:
+                col += 1
+                if col >= ncol:
+                    c.showPage()
+                    col = 0
+                    y = content_top
+                    ayraclari_ciz()
+                else:
+                    y = content_top
+            _draw_item(c, g, col_x[col], y, iw, ih, item_h, font, renk, soru_alti)
+            y -= item_h + gap
 
     # cevap anahtarı (yeni sayfa)
     c.showPage()
@@ -256,25 +274,24 @@ def _cevap_anahtari(c: Canvas, gorseller, stil, renk, font) -> None:
     c.setFont(font, 20)
     c.drawString(MARGIN, PAGE_H - MARGIN - 20, "Cevap Anahtarı")
 
-    # ızgara: her sütunda yaklaşık 90 pt genişliğinde hücreler
+    # ızgara: SÜTUN-ÖNCELİKLİ (alt alta): ilk yarı sol sütunda, ikinci yarı sağda
     content_w = PAGE_W - 2 * MARGIN - (ncol - 1) * GUTTER
     col_w = content_w / ncol
     col_x = [MARGIN + i * (col_w + GUTTER) for i in range(ncol)]
-    hucre_gen = 90.0
-    satir_basina = max(1, int(col_w // hucre_gen))
     row_h = 20.0
     start_y = PAGE_H - MARGIN - 56
-    satir_kapasitesi = max(1, int((start_y - MARGIN) // row_h))
-    per_col = satir_basina * satir_kapasitesi
+
+    n = len(gorseller)
+    rows_per_col = (n + ncol - 1) // ncol if ncol > 1 else n
+    rows_per_col = max(1, rows_per_col)
 
     c.setFont(font, 12)
     c.setFillColor(HexColor("#222222"))
     for idx, g in enumerate(gorseller):
-        kolon = min(idx // per_col, ncol - 1) if ncol > 1 else 0
-        local = idx - kolon * per_col
-        r = local // satir_basina
-        kc = local % satir_basina
-        x = col_x[kolon] + kc * hucre_gen
+        kolon = (idx // rows_per_col) if ncol > 1 else 0
+        kolon = min(kolon, ncol - 1)
+        r = idx - kolon * rows_per_col
+        x = col_x[kolon]
         y = start_y - r * row_h
         c.drawString(x, y, f"{g.no} - {g.sik}")
 

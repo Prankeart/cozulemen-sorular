@@ -153,19 +153,28 @@ def export_word(proje, sorular, stil: dict, out_path: Optional[str] = None) -> s
     br.font.bold = True
     br.font.color.rgb = renk
 
-    tablo = doc.add_table(rows=0, cols=4)
+    # SÜTUN-ÖNCELİKLİ anahtar: sol sütunda ilk yarı, sağ sütunda ikinci yarı
+    iki = (stil.get("sayfa_tarzi") == "iki")
+    sutun_sayisi = 2 if iki else 1
+    n = len(sorular)
+    satir_sayisi = ((n + sutun_sayisi - 1) // sutun_sayisi) if iki else n
+    satir_sayisi = max(1, satir_sayisi)
+
+    tablo = doc.add_table(rows=0, cols=sutun_sayisi)
     try:
         tablo.style = "Table Grid"
     except Exception:
         pass
-    hucre = 3
-    satir = None
-    for i, s in enumerate(sorular):
-        if i % hucre == 0:
-            satir = tablo.add_row().cells
-        j = i % hucre
-        satir[j].text = f"{s['soru_no']} - {s['dogru_sik']}"
-        for pr in satir[j].paragraphs:
+
+    for idx, s in enumerate(sorular):
+        kolon = (idx // satir_sayisi) if iki else 0
+        kolon = min(kolon, sutun_sayisi - 1)
+        r = idx - kolon * satir_sayisi
+        while len(tablo.rows) <= r:
+            tablo.add_row()
+        cell = tablo.rows[r].cells[kolon]
+        cell.text = f"{s['soru_no']} - {s['dogru_sik']}"
+        for pr in cell.paragraphs:
             _run_font(pr, font_adi, 12, RGBColor(0x22, 0x22, 0x22))
 
     doc.save(out_path)

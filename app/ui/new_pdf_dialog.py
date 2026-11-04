@@ -49,6 +49,7 @@ FONT_SECENEKLERI = {
 SAYFA_TARZI = {"Tek sütun": "tek", "İki sütun": "iki"}
 AYRAC = {"Çizgi": "cizgi", "Yok": "yok"}
 SORU_ALTI = {"Yok": "yok", "Çizgi": "cizgi"}
+GENIS_MOD = {"Kapalı": "kapali", "Açık": "acik"}
 
 
 class NewPdfDialog(QDialog):
@@ -146,6 +147,17 @@ class NewPdfDialog(QDialog):
         lay.addWidget(QLabel("Soru altı çizgisi:"))
         lay.addWidget(self.cb_soru_alti)
 
+        # Geniş soru tam genişlik (aç/kapa)
+        self.cb_genis = QComboBox()
+        for ad, val in GENIS_MOD.items():
+            self.cb_genis.addItem(ad, val)
+        self.cb_genis.setToolTip(
+            "Açık: çok geniş sorular iki sütunu da kaplar (satır tabanlı akış).\n"
+            "Kapalı: sorular alt alta, iki sütun eşit doldurulur."
+        )
+        lay.addWidget(QLabel("Geniş soru iki sütunu kaplasın:"))
+        lay.addWidget(self.cb_genis)
+
         # Soru boşluğu kaydırıcı
         self.sl_bosluk = QSlider(Qt.Horizontal)
         self.sl_bosluk.setRange(0, 80)
@@ -189,6 +201,7 @@ class NewPdfDialog(QDialog):
         self.cb_sayfa.currentIndexChanged.connect(self._onizleme_tazele)
         self.cb_ayrac.currentIndexChanged.connect(self._onizleme_tazele)
         self.cb_soru_alti.currentIndexChanged.connect(self._onizleme_tazele)
+        self.cb_genis.currentIndexChanged.connect(self._onizleme_tazele)
         self.cb_font.currentIndexChanged.connect(self._onizleme_tazele)
         self.sl_bosluk.valueChanged.connect(lambda *_: self._onizleme_tazele())
         self._onizleme_tazele()
@@ -228,6 +241,7 @@ class NewPdfDialog(QDialog):
             sayfa_tarzi=self.cb_sayfa.currentData(),
             ayrac=self.cb_ayrac.currentData(),
             soru_alti_cizgi=self.cb_soru_alti.currentData(),
+            genis_tam_genislik=self.cb_genis.currentData(),
             soru_boslugu=self.sl_bosluk.value(),
             renk=self._renk,
             font=FONT_SECENEKLERI[self.cb_font.currentText()],
