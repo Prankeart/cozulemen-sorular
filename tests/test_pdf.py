@@ -79,6 +79,28 @@ class PdfExportTest(unittest.TestCase):
         self.assertEqual(imza, b"%PDF-")
         self.assertGreaterEqual(sayfa, 2)
 
+    def test_uzun_cevap_anahtari_sayfalani(self):
+        # 259 soru: cevap anahtarı tek sayfaya sığmaz; hepsi görünmeli (regresyon)
+        proje = {"ad": "Uzun", "sik_sayisi": 4}
+        out = str(self.dir / "uzun.pdf")
+        sor = self._sorular(259)
+        export_pdf(proje, sor, _stil(sayfa_tarzi="iki"), out)
+
+        try:
+            import pypdfium2 as pdfium
+            import re
+        except Exception:
+            self.skipTest("pypdfium2 yok; metin çıkarımı atlandı")
+        d = pdfium.PdfDocument(out)
+        nums = set()
+        for pg in d:
+            t = pg.get_textpage().get_text_bounded()
+            for m in re.finditer(r"(\d+)\s*-\s*([A-E])", t):
+                nums.add(int(m.group(1)))
+        self.assertEqual(nums, set(range(1, 260)))
+        # soru sayfaları + çok sayfalı cevap anahtarı => en az 2 sayfa
+        self.assertGreaterEqual(len(d), 2)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

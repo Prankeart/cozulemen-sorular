@@ -257,43 +257,60 @@ def export_pdf(
 
 
 def _cevap_anahtari(c: Canvas, gorseller, stil, renk, font) -> None:
+    """Cevap anahtarını (gerekirse birden çok sayfaya yayarak) çizer.
+
+    Sütun-öncelikli (alt alta): önce sol sütun aşağı doğru, sonra sağ sütun.
+    Bir sayfaya sığmayan cevaplar yeni sayfaya devam eder — hiçbiri kaybolmaz.
+    """
     iki_sutun = stil.get("sayfa_tarzi") == "iki"
     ncol = 2 if iki_sutun else 1
+    ayraclar = stil.get("ayrac", "cizgi") == "cizgi"
 
-    # sütun ayraçları (soru sayfalarıyla aynı)
-    if stil.get("ayrac", "cizgi") == "cizgi" and iki_sutun:
-        c.setStrokeColor(renk)
-        c.setLineWidth(0.7)
-        content_w = PAGE_W - 2 * MARGIN - GUTTER
-        col_w = content_w / 2
-        x = MARGIN + col_w + GUTTER / 2
-        c.line(x, MARGIN, x, PAGE_H - MARGIN)
-
-    # başlık
-    c.setFillColor(renk)
-    c.setFont(font, 20)
-    c.drawString(MARGIN, PAGE_H - MARGIN - 20, "Cevap Anahtarı")
-
-    # ızgara: SÜTUN-ÖNCELİKLİ (alt alta): ilk yarı sol sütunda, ikinci yarı sağda
     content_w = PAGE_W - 2 * MARGIN - (ncol - 1) * GUTTER
     col_w = content_w / ncol
     col_x = [MARGIN + i * (col_w + GUTTER) for i in range(ncol)]
     row_h = 20.0
-    start_y = PAGE_H - MARGIN - 56
+
+    def _ayrac_ciz():
+        if ayraclar and iki_sutun:
+            c.setStrokeColor(renk)
+            c.setLineWidth(0.7)
+            x = col_x[1] - GUTTER / 2
+            c.line(x, MARGIN, x, PAGE_H - MARGIN)
 
     n = len(gorseller)
-    rows_per_col = (n + ncol - 1) // ncol if ncol > 1 else n
-    rows_per_col = max(1, rows_per_col)
+    idx = 0
+    sayfa = 0
+    while idx < n:
+        _ayrac_ciz()
+        if sayfa == 0:
+            c.setFillColor(renk)
+            c.setFont(font, 20)
+            c.drawString(MARGIN, PAGE_H - MARGIN - 20, "Cevap Anahtarı")
+            start_y = PAGE_H - MARGIN - 56
+        else:
+            c.setFillColor(renk)
+            c.setFont(font, 11)
+            c.drawString(MARGIN, PAGE_H - MARGIN - 14, "Cevap Anahtarı (devam)")
+            start_y = PAGE_H - MARGIN - 40
 
-    c.setFont(font, 12)
-    c.setFillColor(HexColor("#222222"))
-    for idx, g in enumerate(gorseller):
-        kolon = (idx // rows_per_col) if ncol > 1 else 0
-        kolon = min(kolon, ncol - 1)
-        r = idx - kolon * rows_per_col
-        x = col_x[kolon]
-        y = start_y - r * row_h
-        c.drawString(x, y, f"{g.no} - {g.sik}")
+        capacity = max(1, int((start_y - MARGIN) // row_h))  # sütun başına satır
+        c.setFont(font, 12)
+        c.setFillColor(HexColor("#222222"))
+
+        for col in range(ncol):
+            r = 0
+            while r < capacity and idx < n:
+                g = gorseller[idx]
+                c.drawString(col_x[col], start_y - r * row_h, f"{g.no} - {g.sik}")
+                r += 1
+                idx += 1
+            if idx >= n:
+                break
+
+        if idx < n:  # hâlâ cevap var -> yeni sayfa
+            c.showPage()
+            sayfa += 1
 
 
 def export_project_pdf(proje_id: int, db=None) -> str:
